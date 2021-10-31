@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+
+<html lang="en" class="no-js">
+
+<head>
+    <!-- 
+            BED CA2 Assignment
+            Name: Ang Teong-Hean Isaac
+            Admin Number: p2021487
+            Frontend template taken from https://www.templateshub.net/
+        -->
+
+    <!-- Basic need -->
+    <title>SP Movies</title>
+    <meta charset="UTF-8" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <link rel="profile" href="#" />
+
+    <!-- Bootstrap -->
+    <!-- <link
+            rel="stylesheet"
+            href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        />
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
+
+    <!--Google Font-->
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Dosis:400,700,500|Nunito:300,400,600" />
+
+    <!-- Mobile specific meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="format-detection" content="telephone-no" />
+
+    <!-- CSS files -->
+    <link rel="stylesheet" href="css/plugins.css" />
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Ajax -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="js/jwtdecode.js"></script>
+    <script>
+        // check if token is expired
+        // automatically logs out when token is expired
+        // warn user 5 minutes before token expires
+        if (localStorage.getItem("token") != null) {
+            token = jwt_decode(localStorage.getItem("token"));
+
+            const now = Date.now().valueOf() / 1000;
+
+            if (token.exp < now) {
+                console.log("token expired");
+                localStorage.removeItem("token");
+                window.location.reload();
+            } else if (token.exp - now == 300) {
+                window.alert("You will be logged out in five minutes");
+            }
+        }
+
+        //load search bar options
+        // ajax to send request to backend server
+        $.ajax({
+            url: `http://localhost:8081/genre`,
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function(data, textStatus, xhr) {
+                for (var i in data) {
+                    // Set movie photo
+                    document.getElementById(
+                        "search-genre"
+                    ).innerHTML += `<option value="${data[i].genre}">${data[i].genre}</option>`;
+                }
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                // window.location.assign("http://localhost:3031/404");
+                console.log("get genres error");
+            },
+        });
+
+        // Show movies
+        // ajax to send request to backend server
+        $.ajax({
+            url: "http://localhost:8081/movie",
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function(data, textStatus, xhr) {
+                if (data != null) {
+                    for (var i in data) {
+                        // Show average rating if there are reviews
+                        if (data[i].average != null) {
+                            document.getElementById(
+                                "movies-recent"
+                            ).innerHTML += `<div class="slide-it" style="display: flex; flex-direction: column; flex-wrap: wrap;">
+                                            <div class="movie-item" style="position: relative; margin-right: 30px; -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px;">
+                                                <div class="mv-img" style="position: relative;">
+                                                    <img
+                                                        src="http://localhost:8081/movie/photo/${data[i].path}"
+                                                        alt=""
+                                                        width="185"
+                                                        height="284"
+                                                    />
+                                                </div>
+                                                <div class="hvr-inner">
+                                                    <a href="http://localhost:3031/movie/?movieid=${data[i].movieid}">
+                                                        Read more
+                                                        <i class="ion-android-arrow-dropright"></i>
+                                                    </a>
+                                                </div>
+                                                <div class="title-in">
+                                                    <h6>
+                                                        <a href="#">${data[i].title}</a>
+                                                    </h6>
+                                                    <p>
+                                                        <i class="ion-android-star"></i><span>${data[i].average}</span>/5
+                                                    </p>
+                                                    <p>${data[i].reviews} Ratings</p> <!-- Change number here -->
+                                                </div>
+                                            </div>
+                                        </div>`;
+                        } else {
+                            // Show show "no ratings" if there are no reviews
+                            document.getElementById(
+                                "movies-recent"
+                            ).innerHTML += `<div class="slide-it" style="display: flex; flex-direction: column; flex-wrap: wrap;">
+                                            <div class="movie-item" style="position: relative; margin-right: 30px; -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px;">
+                                                <div class="mv-img" style="position: relative;" >
+                                                    <img
+                                                        src="http://localhost:8081/movie/photo/${data[i].path}"
+                                                        alt=""
+                                                        width="185"
+                                                        height="284"
+                                                    />
+                                                </div>
+                                                <div class="hvr-inner">
+                                                    <a href="http://localhost:3031/movie/?movieid=${data[i].movieid}">
+                                                        Read more
+                                                        <i class="ion-android-arrow-dropright"></i>
+                                                    </a>
+                                                </div>
+                                                <div class="title-in">
+                                                    <h6>
+                                                        <a href="#">${data[i].title}</a>
+                                                    </h6>
+                                                    <p>No Ratings</p>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                        }
+                    }
+                }
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                document.getElementById("movies-recent").innerHTML = "Error! Failed to load movies";
+            },
+        });
+
+        $(document).ready(function() {
+            // Replace login and sign up button
+            if (localStorage.getItem("token") != null) {
+                token = jwt_decode(localStorage.getItem("token"));
+                document.getElementById(
+                    "loginLink"
+                ).innerHTML = `<p style="color: #fff; padding: 15px">Welcome Back, <br/> <a href="#" class="profileLink">${token.username}</a> </p>`;
+                document.getElementById("loginLink").classList.remove("loginLink");
+                document.getElementById("signupLink").innerHTML = '<a href="#">sign out</a>';
+                document.getElementById("signupLink").classList.add("signoutLink");
+                document.getElementById("signupLink").classList.remove("signupLink");
+
+                // sign out
+                $("#signupLink").click(function() {
+                    localStorage.removeItem("token");
+                    window.location.reload();
+                });
+            } else {
+                document.getElementById("loginLink").innerHTML = '<a href="#">Log In</a>';
+                document.getElementById("signupLink").innerHTML = '<a href="#">Sign Up</a>';
+            }
+            // Login
+            $("#Login").click(function() {
+                // get user inputs
+                var username = $("#username").val();
+                var password = $("#password").val();
+                var reqBody = `{"username": "${username}", "password": "${password}"}`;
+
+                // ajax to send request to backend server
+                $.ajax({
+                    url: "http://localhost:8081/login",
+                    type: "POST",
+                    data: reqBody,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function(data, textStatus, xhr) {
+                        if (data != null) {
+                            // set token in local storage and refresh page for user
+                            localStorage.setItem("token", data.token);
+                            window.location.reload();
+                        }
+                    },
+                    error: function(xhr, textStatus, errorThrown) {
+                        document.getElementById("login-err").innerHTML = "Username or Password is Incorrect!";
+                    },
+                });
+                return false;
+            });
+
+            // Sign Up
+            $("#Signup").click(function() {
+                var username = $("#username-2").val();
+                var email = $("#email-2").val();
+                var contact = $("#contact-2").val();
+                var password = $("#password-2").val();
+                var repassword = $("#repassword-2").val();
+
+                // check that passwords match
+                if (password != repassword) {
+                    document.getElementById("signup-err").innerHTML = "Passwords do not match!";
+                } else {
+                    var reqBody = `{"username": "${username}", "email": "${email}", "contact": "${contact}", "password": "${password}"}`;
+                    $.ajax({
+                        url: "http://localhost:8081/users",
+                        type: "POST",
+                        data: reqBody,
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function(data, textStatus, xhr) {
+                            if (data != null) {
+                                // Automatically log user in
+                                var reqBody = `{"username": "${username}", "password": "${password}"}`;
+
+                                // ajax to send request to backend server
+                                $.ajax({
+                                    async: false,
+                                    url: "http://localhost:8081/login",
+                                    type: "POST",
+                                    data: reqBody,
+                                    contentType: "application/json; charset=utf-8",
+                                    dataType: "json",
+                                    success: function(data, textStatus, xhr) {
+                                        if (data != null) {
+                                            // set token in local storage and refresh page for user
+                                            localStorage.setItem("token", data.token);
+                                            window.location.reload();
+                                        }
+                                    },
+                                    error: function(xhr, textStatus, errorThrown) {
+                                        window.location.assign("http://localhost:3031/404");
+                                    },
+                                });
+                            }
+                        },
+
+                        error: function(xhr, textStatus, errorThrown) {
+                            if (xhr.status == 422) {
+                                document.getElementById("signup-err").innerHTML = "Username/Email/Contact is already in use!";
+                            } else {
+                                document.getElementById("signup-err").innerHTML = "Internal Server Error";
+                            }
+                        },
+                    });
+                }
+                return false;
+            });
+
+            // Search movies
+            $("#Search").click(function() {
+                var genre = $("#search-genre").val();
+                var title = $("#search-title ").val();
+                window.location.assign(`http://localhost:3031/search?genre=${genre}&title=${title}`);
+                return false;
+            });
+
+            // show admin tools if admin
+            // checks by token in the frontend, but the backend will also verify the token
+
+            if (localStorage.getItem("token") != null) {
+                token = jwt_decode(localStorage.getItem("token"));
+                if (token.type == "admin") {
+                    document.getElementById("navbarRight").innerHTML += `
+                    <li class="dropdown first">
+                        <a class="btn btn-default dropdown-toggle lv1" data-toggle="dropdown" data-hover="dropdown">
+                                Admin Tools
+                                <i class="fa fa-angle-down" aria-hidden="true"></i>
+                            </a>
+                        <ul class="dropdown-menu level1">
+                            <li class="btn addMovieLink" id="addMovieLink"><a href="#">Add Movie</a></li>
+                            <li class="btn addGenreLink" id="addGenreLink"><a href="#">Add Genre</a></li>
+                            <li class="btn deleteMovieLink" id="deleteMovieLink"><a href="#">Delete Movie</a></li>
+                            <li class="btn deleteGenreLink" id="deleteGenreLink"><a href="#">Delete Genre</a></li>
+                        </ul>
+                    </li>`;
+
+                    // add genre options for add movie form
+                    // ajax to send request to backend server
+                    $.ajax({
+                        url: `http://localhost:8081/genre`,
+                        type: "GET",
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function(data, textStatus, xhr) {
+                            for (var i in data) {
+                                document.getElementById(
+                                    "add-movie-genre"
+                                ).innerHTML += `<option value="${data[i].genreid}">${data[i].genre}</option>`;
+                            }
+                        },
+                        error: function(xhr, textStatus, errorThrown) {
+                            window.location.assign("http://localhost:3031/404");
+                        },
+                    });
+
+                    // frontend limiting the filesize to 1mb
+                    // checks in the backend are also done via multer options
+                    document.getElementById("poster").onchange = function() {
+                        if (this.files[0].size > 1048576) {
+                            alert("File is too big!");
+                            this.value = "";
+                        } else {
+                            posterPhoto = this.files;
+                        }
+                    };
+
+                    // cosmetic script for addmovie genre select
+                    $("#add-movie-genre")
+                        .mousedown(function(e) {
+                            e.preventDefault();
+
+                            var select = this;
+                            var scroll = select.scrollTop;
+
+                            e.target.selected = !e.target.selected;
+
+                            setTimeout(function() {
+                                select.scrollTop = scroll;
+                            }, 0);
+
+                            $(select).focus();
+                        })
+                        .mousemove(function(e) {
+                            e.preventDefault();
+                        });
+
+                    // add movie
+                    $("#Add-Movie").click(function() {
+                        var title = $("#title").val();
+                        var description = $("#description").val();
+                        var genre = $("#add-movie-genre").val();
+                        var cast = $("#cast").val();
+                        var time = $("#time").val();
+                        var openingDate = $("#opening-date").val();
+
+                        var reqBody = `{"title": "${title}", "description": "${description}", "genreid": "${genre}", "cast": "${cast}", "time": "${time}", "opening_date": "${openingDate}"}`;
+                        $.ajax({
+                            url: "http://localhost:8081/movie",
+                            type: "POST",
+
+                            data: reqBody,
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            headers: {
+                                authorization: `Bearer ${localStorage.getItem("token")}`,
+                            },
+                            success: function(data, textStatus, xhr) {
+                                var poster = new FormData();
+                                poster.append("poster", $("#poster")[0].files[0]);
+
+                                $.ajax({
+                                    url: `http://localhost:8081/movie/${data.movieid}/photo`,
+                                    type: "POST",
+                                    data: poster,
+                                    processData: false,
+                                    contentType: false,
+                                    dataType: "json",
+                                    headers: {
+                                        authorization: `Bearer ${localStorage.getItem("token")}`,
+                                    },
+                                    success: function(data, textStatus, xhr) {
+                                        window.alert("Movie successfully added");
+                                        window.location.reload();
+                                    },
+                                    error: function(xhr, textStatus, errorThrown) {
+                                        window.location.assign(`http://localhost:3031/404`);
+                                    },
+                                });
+                            },
+
+                            error: function(xhr, textStatus, errorThrown) {
+                                window.location.assign(`http://localhost:3031/404`);
+                            },
+                        });
+
+                        return false;
+                    });
+
+                    // add genre
+                    $("#Add-Genre").click(function() {
+                        var genre = $("#genre").val();
+                        var description = $("#gemre-description").val();
+
+                        var reqBody = `{"genre": "${genre}", "description": "${description}" }`;
+                        $.ajax({
+                            url: "http://localhost:8081/genre",
+                            type: "POST",
+                            data: reqBody,
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            headers: {
+                                authorization: `Bearer ${localStorage.getItem("token")}`,
+                            },
+                            success: function(data, textStatus, xhr) {
+                                window.alert("Genre successfully added");
+                                window.location.reload();
+                            },
+
+                            error: function(xhr, textStatus, errorThrown) {
+                                window.location.assign(`http://localhost:3031/404`);
+                            },
+                        });
+
+                        return false;
+                    });
+
+                    // load delete movie options
+                    $.ajax({
+                        url: `http://localhost:8081/movie`,
+                        type: "GET",
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function(data, textStatus, xhr) {
+                            for (var i in data) {
+                                // Set movie
+                                document.getElementById(
+                                    "movieid"
+                                ).innerHTML += `<option value="${data[i].movieid}">${data[i].title}</option>`;
+                            }
+                        },
+                        error: function(xhr, textStatus, errorThrown) {
+                            window.location.assign("http://localhost:3031/404");
+                        },
+                    });
+
+                    // delete movie
+                    $("#Delete-Movie").click(function() {
+                        var movieid = $("#movieid").val();
+
+                        $.ajax({
+                            url: `http://localhost:8081/movie/${movieid}`,
+                            type: "DELETE",
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            headers: {
+                                authorization: `Bearer ${localStorage.getItem("token")}`,
+                            },
+                            success: function(data, textStatus, xhr) {
+                                window.alert("Movie successfully deleted");
+                                window.location.reload();
+                            },
+
+                            error: function(xhr, textStatus, errorThrown) {
+                                window.location.assign(`http://localhost:3031/404`);
+                            },
+                        });
+
+                        return false;
+                    });
+
+                    // load genre movie options
+                    $.ajax({
+                        url: `http://localhost:8081/genre`,
+                        type: "GET",
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function(data, textStatus, xhr) {
+                            for (var i in data) {
+                                // Set genre
+                                document.getElementById(
+                                    "genreid"
+                                ).innerHTML += `<option value="${data[i].genreid}">${data[i].genre}</option>`;
+                            }
+                        },
+                        error: function(xhr, textStatus, errorThrown) {
+                            window.location.assign("http://localhost:3031/404");
+                        },
+                    });
+
+                    // delete genre
+                    $("#Delete-Genre").click(function() {
+                        var genreid = $("#genreid").val();
+
+                        $.ajax({
+                            url: `http://localhost:8081/genre/${genreid}`,
+                            type: "DELETE",
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            headers: {
+                                authorization: `Bearer ${localStorage.getItem("token")}`,
+                            },
+                            success: function(data, textStatus, xhr) {
+                                window.alert("Genre successfully deleted");
+                                window.location.reload();
+                            },
+
+                            error: function(xhr, textStatus, errorThrown) {
+                                // window.location.assign(`http://localhost:3031/404`);
+
+                                console.log("error");
+                            },
+                        });
+
+                        return false;
+                    });
+                }
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <!--preloading-->
+    <div id="preloader">
+        <img class="logo" src="/images/logo1.png" alt="" width="119" height="58" />
+        <div id="status">
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    <!--end of preloading-->
+    <!--add movie form popup-->
+    <div class="login-wrapper" id="addmovie-content">
+        <div class="login-content">
+            <a href="#" class="close">x</a>
+            <h3>Add Movie</h3>
+            <form method="post" action="">
+                <div class="row">
+                    <label for="title">
+                            Title:
+                            <input type="text" name="title" id="title" placeholder="Title" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <label for="description">
+                            Description:
+                            <input
+                                type="text"
+                                name="description"
+                                id="description"
+                                placeholder="Description"
+                                required="required"
+                            />
+                        </label>
+                </div>
+                <div class="genre">
+                    <select id="add-movie-genre" multiple required></select>
+                </div>
+                <div class="row">
+                    <label for="cast">
+                            Cast:
+                            <input type="text" name="cast" id="cast" placeholder="Cast" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <label for="time">
+                            Time:
+                            <input type="text" name="time" id="time" placeholder="Running Time" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <label for="opening-date">
+                            Opening Date:
+                            <input
+                                type="text"
+                                name="opening-date"
+                                id="opening-date"
+                                placeholder="Opening Date"
+                                required="required"
+                            />
+                        </label>
+                </div>
+                <div class="row">
+                    <label for="poster">
+                            Poster:
+                            <input type="file" name="poster" id="poster" accept=".png, .jpg, .jpeg" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <button type="submit" id="Add-Movie">Add Movie</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--end of add movie form popup-->
+    <!--add genre form popup-->
+    <div class="login-wrapper" id="addgenre-content">
+        <div class="login-content">
+            <a href="#" class="close">x</a>
+            <h3>Add Genre</h3>
+            <form method="post" action="">
+                <div class="row">
+                    <label for="genre">
+                            Genre:
+                            <input type="text" name="genre" id="genre" placeholder="Genre" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <label for="gemre-description">
+                            Description:
+                            <input
+                                type="text"
+                                name="gemre-description"
+                                id="gemre-description"
+                                placeholder="Description"
+                                required="required"
+                            />
+                        </label>
+                </div>
+                <div class="row">
+                    <button type="submit" id="Add-Genre">Add Genre</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--end of add genre form popup-->
+
+    <!--delete movie form popup-->
+    <div class="login-wrapper" id="deletemovie-content">
+        <div class="login-content">
+            <a href="#" class="close">x</a>
+            <h3>Delete Movie</h3>
+            <form method="post" action="">
+                <div class="row">
+                    <label for="movieid">
+                            Movie:
+                            <select name="movieid" id="movieid"></select>
+                        </label>
+                </div>
+                <div class="row">
+                    <button type="submit" id="Delete-Movie">Delete Movie</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--end of delete movie form popup-->
+
+    <!--delete genre form popup-->
+    <div class="login-wrapper" id="deletegenre-content">
+        <div class="login-content">
+            <a href="#" class="close">x</a>
+            <h3>Delete Genre</h3>
+            <form method="post" action="">
+                <div class="row">
+                    <label for="genreid">
+                            Genre:
+                            <select name="genreid" id="genreid"></select>
+                        </label>
+                </div>
+                <div class="row">
+                    <button type="submit" id="Delete-Genre">Delete Genre</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--end of delete genre form popup-->
+
+    <!--login form popup-->
+    <div class="login-wrapper" id="login-content">
+        <div class="login-content">
+            <a href="#" class="close">x</a>
+            <h3>Login</h3>
+            <form action="">
+                <div class="row">
+                    <label for="username">
+                            Username:
+                            <input type="text" name="username" id="username" placeholder="Hugh Jackman" required="required" />
+                        </label>
+                </div>
+
+                <div class="row">
+                    <label for="password">
+                            Password:
+                            <input type="password" name="password" id="password" placeholder="******" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <div class="remember">
+                        <div><input type="checkbox" name="remember" value="Remember me" /><span>Remember me</span></div>
+                    </div>
+                    <div>
+                        <p id="login-err"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <button type="submit" id="Login">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--end of login form popup-->
+    <!--signup form popup-->
+    <div class="login-wrapper" id="signup-content">
+        <div class="login-content">
+            <a href="#" class="close">x</a>
+            <h3>sign up</h3>
+            <form method="post" action="#">
+                <div class="row">
+                    <label for="1">
+                            Username:
+                            <input type="text" name="username" id="username-2" placeholder="Hugh Jackman" required="required" />
+                        </label>
+                </div>
+
+                <div class="row">
+                    <label for="email-2">
+                            your email:
+                            <input type="text" name="email" id="email-2" placeholder="" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <label for="contact-2">
+                            contact number:
+                            <input type="text" name="contact" id="contact-2" placeholder="" required="required" />
+                        </label>
+                </div>
+                <div class="row" id="signup-err"></div>
+                <div class="row">
+                    <label for="password-2">
+                            Password:
+                            <input type="password" name="password" id="password-2" placeholder="" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <label for="repassword-2">
+                            re-type Password:
+                            <input type="password" name="repassword" id="repassword-2" placeholder="" required="required" />
+                        </label>
+                </div>
+                <div class="row">
+                    <button type="submit" id="Signup">sign up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--end of signup form popup-->
+
+    <!-- BEGIN | Header -->
+    <header class="ht-header">
+        <div class="container">
+            <nav class="navbar navbar-default navbar-custom">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header logo">
+                    <div class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span>
+                        <div id="nav-icon1">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                    <a href="http://localhost:3031"><img class="logo" src="images/logo1.png" alt="" width="119" height="58" /></a>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse flex-parent" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav flex-child-menu menu-left" id="navbarRight">
+                        <li class="hidden">
+                            <a href="#page-top"></a>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav flex-child-menu menu-right">
+                        <li class="loginLink" id="loginLink"></li>
+                        <li class="btn signupLink" id="signupLink"></li>
+                    </ul>
+                </div>
+                <!-- /.navbar-collapse -->
+            </nav>
+
+            <!-- top search form -->
+            <div class="top-search">
+                <select id="search-genre">
+                        <option value="null">Select Genre</option>
+                    </select>
+                <input type="text" placeholder="Search for a movie that you are looking for" id="search-title" />
+                <a href="#" id="Search"><img src="/images/uploads/topsearch.png" alt="" /></a>
+            </div>
+        </div>
+    </header>
+    <!-- END | Header -->
+
+    <div class="slider movie-items">
+        <div class="container">
+            <div class="row">
+                <div class="social-link">
+                    <p>Follow us:</p>
+                    <a href="#"><i class="ion-social-facebook"></i></a>
+                    <a href="#"><i class="ion-social-twitter"></i></a>
+                    <a href="#"><i class="ion-social-googleplus"></i></a>
+                    <a href="#"><i class="ion-social-youtube"></i></a>
+                </div>
+                <div class="slick-multiItemSlider">
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <a href="#"><img src="images/uploads/slider1.jpg" alt="" width="285" height="437" /></a>
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="blue"><a href="#">Sci-fi</a></span>
+                            </div>
+                            <h6><a href="#">Interstellar</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <a href="#"><img src="images/uploads/slider2.jpg" alt="" width="285" height="437" /></a>
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="yell"><a href="#">action</a></span>
+                            </div>
+                            <h6><a href="#">The revenant</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <a href="#"><img src="images/uploads/slider3.jpg" alt="" width="285" height="437" /></a>
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="green"><a href="#">comedy</a></span>
+                            </div>
+                            <h6><a href="#">Die hard</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <a href="#"><img src="images/uploads/slider4.jpg" alt="" width="285" height="437" /></a>
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="blue"><a href="#">Sci-fi</a></span>
+                                <span class="orange"><a href="#">advanture</a></span>
+                            </div>
+                            <h6><a href="#">The walk</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <a href="#"><img src="images/uploads/slider1.jpg" alt="" width="285" height="437" /></a>
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="blue"><a href="#">Sci-fi</a></span>
+                            </div>
+                            <h6><a href="#">Interstellar</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <a href="#"><img src="images/uploads/slider2.jpg" alt="" width="285" height="437" /></a>
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="yell"><a href="#">action</a></span>
+                            </div>
+                            <h6><a href="#">The revenant</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <img src="images/uploads/slider3.jpg" alt="" width="285" height="437" />
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="green"><a href="#">comedy</a></span>
+                            </div>
+                            <h6><a href="#">Die hard</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <img src="images/uploads/slider4.jpg" alt="" width="285" height="437" />
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="blue"><a href="#">Sci-fi</a></span>
+                                <span class="orange"><a href="#">advanture</a></span>
+                            </div>
+                            <h6><a href="#">The walk</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                    <div class="movie-item">
+                        <div class="mv-img">
+                            <img src="images/uploads/slider3.jpg" alt="" width="285" height="437" />
+                        </div>
+                        <div class="title-in">
+                            <div class="cate">
+                                <span class="green"><a href="#">comedy</a></span>
+                            </div>
+                            <h6><a href="#">Die hard</a></h6>
+                            <p><i class="ion-android-star"></i><span>7.4</span> /10</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="movie-items">
+        <div class="container">
+            <div class="row ipad-width">
+                <div class="col-md-8">
+                    <div class="title-hd">
+                        <h2>in theater</h2>
+                    </div>
+                    <div class="tabs">
+                        <ul class="tab-links">
+                            <li class="active">
+                                <a href="#tab1">#Top Rated</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div id="tab1" class="tab active">
+                                <div class="row">
+                                    <div class="slick-multiItem" id="movies-recent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- footer section-->
+    <footer class="ht-footer">
+        <div class="container">
+            <div class="flex-parent-ft">
+                <div class="flex-child-ft item1">
+                    <a href="http://localhost:3031"><img class="logo" src="images/logo1.png" alt="" /></a>
+                    <p>
+                        5th Avenue st, manhattan<br /> New York, NY 10001
+                    </p>
+                    <p>Call us: <a href="#">(+01) 202 342 6789</a></p>
+                </div>
+                <div class="flex-child-ft item2">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Blockbuster</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Forums</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Help Center</a></li>
+                    </ul>
+                </div>
+                <div class="flex-child-ft item3">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Terms of Use</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Security</a></li>
+                    </ul>
+                </div>
+                <div class="flex-child-ft item4">
+                    <h4>Account</h4>
+                    <ul>
+                        <li><a href="#">My Account</a></li>
+                        <li><a href="#">Watchlist</a></li>
+                        <li><a href="#">Collections</a></li>
+                        <li><a href="#">User Guide</a></li>
+                    </ul>
+                </div>
+                <div class="flex-child-ft item5">
+                    <h4>Newsletter</h4>
+                    <p>
+                        Subscribe to our newsletter system now <br /> to get latest news from us.
+                    </p>
+                    <form action="#">
+                        <input type="text" placeholder="Enter your email..." />
+                    </form>
+                    <a href="#" class="btn">Subscribe now <i class="ion-ios-arrow-forward"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="ft-copyright">
+            <div class="ft-left">
+                <p>
+                    <a target="_blank" href="https://www.templateshub.net">Templates Hub</a>
+                </p>
+            </div>
+            <div class="backtotop">
+                <p>
+                    <a href="#" id="back-to-top">Back to top <i class="ion-ios-arrow-thin-up"></i></a>
+                </p>
+            </div>
+        </div>
+    </footer>
+    <!-- end of footer section-->
+
+    <script src="js/jquery.js"></script>
+    <script src="js/plugins.js"></script>
+    <script src="js/plugins2.js"></script>
+    <script src="js/custom.js"></script>
+</body>
+
+</html>
